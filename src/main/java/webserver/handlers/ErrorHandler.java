@@ -39,7 +39,8 @@ public class ErrorHandler {
                             .header(HttpHeaders.CONTENT_TYPE, mimeResolver.resolve(errorFile.getName()))
                             .body(content)
                             .build();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    System.err.println("Failed to read error page: " + e.getMessage());
                 }
             }
         }
