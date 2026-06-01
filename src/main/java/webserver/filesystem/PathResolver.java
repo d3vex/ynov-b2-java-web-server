@@ -7,8 +7,6 @@ import java.io.File;
 
 public class PathResolver {
 
-    private final SecurityPathValidator securityValidator = new SecurityPathValidator();
-
     public ResolvedPath resolve(String requestPath, RouteConfig route, ServerConfig config) {
         String rootDir = route != null && route.getRoot() != null
                 ? route.getRoot()
