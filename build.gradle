@@ -12,7 +12,7 @@ java {
 }
 
 application {
-    mainClass = 'main.java.webserver.Main'
+    mainClass = 'webserver.Main'
 }
 
 repositories {
@@ -31,7 +31,7 @@ tasks.named('test') {
 tasks.named('jar') {
     manifest {
         attributes(
-            'Main-Class': 'main.java.webserver.Main'
+            'Main-Class': 'webserver.Main'
         )
     }
 }
