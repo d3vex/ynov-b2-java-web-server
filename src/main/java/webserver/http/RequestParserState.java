@@ -1,5 +1,9 @@
 package webserver.http;
 
-public class RequestParserState {
-    
+public enum RequestParserState {
+    REQUEST_LINE,
+    HEADERS,
+    BODY,
+    COMPLETE,
+    ERROR
 }
