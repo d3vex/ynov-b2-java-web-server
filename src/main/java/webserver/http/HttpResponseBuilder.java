@@ -57,8 +57,8 @@ public class HttpResponseBuilder {
     }
 
     public HttpResponse build() {
-        if (body != null && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
-            headers.set(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length));
+        if (!headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+            headers.set(HttpHeaders.CONTENT_LENGTH, body != null ? String.valueOf(body.length) : "0");
         }
         return new HttpResponse(httpVersion, statusCode, headers, body);
     }
