@@ -29,7 +29,7 @@ public class ShutdownManager {
         if (eventLoop != null) {
             eventLoop.stop();
         }
-        SelectorManager.getInstance().closeChannels();
+        SelectorManager.getInstance().shutdown();
         System.out.println("Server stopped.");
     }
 }
