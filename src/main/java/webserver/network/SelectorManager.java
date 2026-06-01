@@ -74,11 +74,20 @@ public class SelectorManager {
         return clientChannels;
     }
 
+    public void removeClientChannel(SocketChannel channel) {
+        clientChannels.remove(channel);
+    }
+
     public void disableWrite(SocketChannel channel) throws Exception {
         SelectionKey key = clientChannels.get(channel);
         if (key != null) {
             key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
         }
+    }
+
+    public void shutdown() {
+        selector.wakeup();
+        closeChannels();
     }
 
     public void closeChannels() {

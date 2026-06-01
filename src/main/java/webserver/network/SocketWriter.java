@@ -33,13 +33,9 @@ public class SocketWriter {
             if (buffer.hasRemaining()) {
                 buffer.compact();
             } else {
-                try {
-                    selectorManager.disableWrite(channel);
-                } catch (Exception e) {
-                    System.err.println("Error disabling write: " + e.getMessage());
-                }
-                connection.clearResponseState();
-                connection.clearRequestState();
+                connection.close();
+                key.cancel();
+                selectorManager.removeClientChannel(channel);
             }
         } catch (Exception e) {
             System.err.println("Error writing to client: " + e.getMessage());
