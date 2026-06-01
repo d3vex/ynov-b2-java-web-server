@@ -32,7 +32,18 @@ public class RequestDispatcher {
             }
 
             return switch (request.getMethod()) {
-                case GET, HEAD -> staticFileHandler.handle(request, route, config);
+                case GET, HEAD -> {
+                    HttpResponse response = staticFileHandler.handle(request, route, config);
+                    if (request.getMethod() == HttpMethod.HEAD) {
+                        response = new HttpResponse(
+                                response.getHttpVersion(),
+                                response.getStatusCode(),
+                                response.getHeaders(),
+                                null
+                        );
+                    }
+                    yield response;
+                }
                 case POST -> {
                     if (route != null && route.getRoot() != null) {
                         yield staticFileHandler.handle(request, route, config);
