@@ -157,18 +157,56 @@ public class HttpParser {
     }
 
     private void parseBody() {
-        int available = buffer.length();
         if (contentLength > 0) {
+            int available = buffer.length();
             if (available < contentLength) return;
             body = buffer.substring(0, contentLength).getBytes(StandardCharsets.ISO_8859_1);
             buffer.delete(0, contentLength);
             state = RequestParserState.COMPLETE;
-        } else {
-            String raw = buffer.toString();
-            if (raw.endsWith("\r\n\r\n") || raw.endsWith("\n\n")) {
-                body = raw.getBytes(StandardCharsets.ISO_8859_1);
-                buffer.setLength(0);
+            return;
+        }
+
+        // chunked transfer encoding
+        while (true) {
+            int crlf = buffer.indexOf("\r\n");
+            if (crlf < 0) return;
+
+            String sizeLine = buffer.substring(0, crlf).trim();
+            int semicolon = sizeLine.indexOf(';');
+            if (semicolon >= 0) sizeLine = sizeLine.substring(0, semicolon);
+
+            int chunkSize;
+            try {
+                chunkSize = Integer.parseInt(sizeLine, 16);
+            } catch (NumberFormatException e) {
+                error("Invalid chunk size: " + sizeLine);
+                return;
+            }
+
+            buffer.delete(0, crlf + 2);
+
+            if (chunkSize == 0) {
+                if (buffer.length() >= 2 && buffer.substring(0, 2).equals("\r\n")) {
+                    buffer.delete(0, 2);
+                }
+                if (body == null) body = new byte[0];
                 state = RequestParserState.COMPLETE;
+                return;
+            }
+
+            if (buffer.length() < chunkSize + 2) return;
+
+            String chunkData = buffer.substring(0, chunkSize);
+            buffer.delete(0, chunkSize + 2);
+
+            byte[] chunkBytes = chunkData.getBytes(StandardCharsets.ISO_8859_1);
+            if (body == null) {
+                body = chunkBytes;
+            } else {
+                byte[] combined = new byte[body.length + chunkBytes.length];
+                System.arraycopy(body, 0, combined, 0, body.length);
+                System.arraycopy(chunkBytes, 0, combined, body.length, chunkBytes.length);
+                body = combined;
             }
         }
     }
