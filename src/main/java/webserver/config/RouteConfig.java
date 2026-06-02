@@ -57,6 +57,17 @@ public class RouteConfig {
         return cgiExtensions;
     }
 
+    public boolean hasCgiExtension(String filename) {
+        if (cgiExtensions == null) return false;
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0) return false;
+        String ext = filename.substring(dot);
+        for (String configured : cgiExtensions) {
+            if (configured.equalsIgnoreCase(ext)) return true;
+        }
+        return false;
+    }
+
     public boolean isDirectoryListing() {
         return directoryListing;
     }

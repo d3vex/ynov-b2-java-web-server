@@ -42,7 +42,7 @@ public class StaticFileHandler {
             File defaultFileHandle = new File(file, defaultFile);
 
             if (fileService.exists(defaultFileHandle)) {
-                if (hasCgiExtension(defaultFileHandle.getName(), route)) {
+                if (route != null && route.hasCgiExtension(defaultFileHandle.getName())) {
                     String scriptName = request.getPath().endsWith("/")
                             ? request.getPath() + defaultFileHandle.getName()
                             : request.getPath() + "/" + defaultFileHandle.getName();
@@ -59,14 +59,6 @@ public class StaticFileHandler {
         }
 
         return serveFile(file);
-    }
-
-    private boolean hasCgiExtension(String filename, RouteConfig route) {
-        if (route == null || route.getCgiExtensions() == null) return false;
-        int dot = filename.lastIndexOf('.');
-        if (dot < 0) return false;
-        String ext = filename.substring(dot);
-        return route.getCgiExtensions().contains(ext);
     }
 
     private HttpResponse serveFile(File file) {

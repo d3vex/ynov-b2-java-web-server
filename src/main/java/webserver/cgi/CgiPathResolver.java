@@ -32,8 +32,8 @@ public class CgiPathResolver {
             String candidateFilePath = rootDir + "/" + currentPath;
             File candidate = new File(candidateFilePath);
 
-            if (candidate.isFile() && hasCgiExtension(candidate.getName(), route)) {
-                String scriptName = routePath + "/" + currentPath;
+            if (candidate.isFile() && route != null && route.hasCgiExtension(candidate.getName())) {
+                String scriptName = (routePath.endsWith("/") ? routePath : routePath + "/") + currentPath;
 
                 StringBuilder pathInfo = new StringBuilder();
                 for (int j = i + 1; j < segments.length; j++) {
@@ -45,16 +45,6 @@ public class CgiPathResolver {
         }
 
         return null;
-    }
-
-    private boolean hasCgiExtension(String filename, RouteConfig route) {
-        if (route == null || route.getCgiExtensions() == null) {
-            return false;
-        }
-        int dot = filename.lastIndexOf('.');
-        if (dot < 0) return false;
-        String ext = filename.substring(dot);
-        return route.getCgiExtensions().contains(ext);
     }
 
     public record CgiResolvedPath(File scriptFile, String scriptName, String pathInfo) {
