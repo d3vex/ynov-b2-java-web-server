@@ -14,6 +14,7 @@ public class HttpRequest {
     private final String httpVersion;
     private final HttpHeaders headers;
     private final Map<String, String> queryParameters;
+    private final String rawQueryString;
     private final List<Cookie> cookies;
     private byte[] body;
 
@@ -26,9 +27,11 @@ public class HttpRequest {
         int qm = path.indexOf('?');
         if (qm >= 0) {
             this.path = path.substring(0, qm);
-            this.queryParameters = parseQueryString(path.substring(qm + 1));
+            this.rawQueryString = path.substring(qm + 1);
+            this.queryParameters = parseQueryString(this.rawQueryString);
         } else {
             this.path = path;
+            this.rawQueryString = "";
             this.queryParameters = Map.of();
         }
     }
@@ -56,6 +59,10 @@ public class HttpRequest {
 
     public Map<String, String> getQueryParameters() {
         return queryParameters;
+    }
+
+    public String getRawQueryString() {
+        return rawQueryString;
     }
 
     public String getQueryParameter(String name) {

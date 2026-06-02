@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import webserver.http.HttpMethod;
+
 public class ServerConfig {
 
     private final String host;
@@ -55,7 +57,7 @@ public class ServerConfig {
         return timeoutMs;
     }
 
-    public long resolveTimeout(String requestPath) {
+    public long resolveTimeout(String requestPath, HttpMethod method) {
         RouteConfig route = findRoute(requestPath);
         if (route != null && route.getTimeoutMs() != null) {
             return route.getTimeoutMs();
@@ -66,7 +68,7 @@ public class ServerConfig {
         return ConfigDefaults.TIMEOUT_MS;
     }
 
-    public String retrieveErrorPagePath(int statusCode, String requestPath) {
+    public String retrieveErrorPagePath(int statusCode, String requestPath, HttpMethod method) {
         if (requestPath != null) {
             RouteConfig route = findRoute(requestPath);
             if (route != null) {
@@ -83,7 +85,7 @@ public class ServerConfig {
         RouteConfig bestMatch = null;
         int bestLength = -1;
         for (var entry : routes.entrySet()) {
-            String routePath = entry.getKey();
+            String routePath = entry.getValue().getPath();
             if (requestPath.equals(routePath) || requestPath.startsWith(routePath)) {
                 if (routePath.length() > bestLength) {
                     bestLength = routePath.length();

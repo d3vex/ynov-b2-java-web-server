@@ -19,9 +19,12 @@ public class EventLoop {
         while (running) {
             try {
                 if (selectorManager.select() == 0) {
+                    selectorManager.flushPendingCgi();
                     timeoutManager.checkTimeouts(selectorManager.getClientChannels());
                     continue;
                 }
+
+                selectorManager.flushPendingCgi();
 
                 Iterator<SelectionKey> iter = selectorManager.selectedKeys().iterator();
                 while (iter.hasNext()) {
@@ -41,6 +44,7 @@ public class EventLoop {
                     }
                 }
 
+                selectorManager.flushPendingCgi();
                 timeoutManager.checkTimeouts(selectorManager.getClientChannels());
                 errorCount = 0;
 

@@ -27,7 +27,10 @@ public class RequestDispatcher {
 
                 if (route.getAllowedMethods() != null
                         && !route.getAllowedMethods().contains(request.getMethod())) {
-                    return errorHandler.handleError(HttpStatus.METHOD_NOT_ALLOWED, config, path);
+                    if (request.getMethod() != HttpMethod.HEAD
+                            || !route.getAllowedMethods().contains(HttpMethod.GET)) {
+                        return errorHandler.handleError(HttpStatus.METHOD_NOT_ALLOWED, config, path, request.getMethod());
+                    }
                 }
             }
 
@@ -51,12 +54,12 @@ public class RequestDispatcher {
                     yield postHandler.handle(request);
                 }
                 case DELETE -> deleteHandler.handle(request);
-                default -> errorHandler.handleError(HttpStatus.METHOD_NOT_ALLOWED, config, path);
+                default -> errorHandler.handleError(HttpStatus.METHOD_NOT_ALLOWED, config, path, request.getMethod());
             };
 
         } catch (Exception e) {
             System.err.println("Dispatch error: " + e.getMessage());
-            return errorHandler.handleError(HttpStatus.INTERNAL_SERVER_ERROR);
+            return errorHandler.handleError(HttpStatus.INTERNAL_SERVER_ERROR, config, request.getPath(), request.getMethod());
         }
     }
 }

@@ -4,6 +4,7 @@ import webserver.config.ServerConfig;
 import webserver.filesystem.FileService;
 import webserver.filesystem.MimeTypeResolver;
 import webserver.http.HttpHeaders;
+import webserver.http.HttpMethod;
 import webserver.http.HttpResponse;
 import webserver.http.HttpStatus;
 
@@ -19,8 +20,8 @@ public class ErrorHandler {
         return handleError(status, (Map<Integer, String>) null);
     }
 
-    public HttpResponse handleError(HttpStatus status, ServerConfig config, String requestPath) {
-        String errorPath = config != null ? config.retrieveErrorPagePath(status.getCode(), requestPath) : null;
+    public HttpResponse handleError(HttpStatus status, ServerConfig config, String requestPath, HttpMethod method) {
+        String errorPath = config != null ? config.retrieveErrorPagePath(status.getCode(), requestPath, method) : null;
         return serveErrorPage(status, errorPath);
     }
 

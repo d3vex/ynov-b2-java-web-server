@@ -1,5 +1,6 @@
 package webserver.bootstrap;
 
+import webserver.cgi.CgiAsyncExecutor;
 import webserver.network.EventLoop;
 import webserver.network.SelectorManager;
 
@@ -30,6 +31,7 @@ public class ShutdownManager {
             eventLoop.stop();
         }
         SelectorManager.getInstance().shutdown();
+        CgiAsyncExecutor.getInstance().shutdown();
         System.out.println("Server stopped.");
     }
 }

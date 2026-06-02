@@ -4,6 +4,7 @@ import webserver.bootstrap.ServerFactory;
 import webserver.config.RouteConfig;
 import webserver.config.ServerConfig;
 import webserver.http.HttpMethod;
+import java.util.List;
 
 public class Main {
 
@@ -28,6 +29,13 @@ public class Main {
                     .redirect("https://aaa.com/docs")
                     .build();
 
+            RouteConfig cgiRoute = new RouteConfig.Builder()
+                    .path("/cgi")
+                    .root("www/cgi")
+                    .defaultFile("index.py")
+                    .cgiExtensions(List.of(".py", ".sh"))
+                    .build();
+
             ServerConfig apiConfig = new ServerConfig.Builder()
                     .host("0.0.0.0")
                     .port(8888)
@@ -35,6 +43,7 @@ public class Main {
                     .route("/api", apiRoute)
                     .route("/files", filesRoute)
                     .route("/docs", docsRoute)
+                    .route("/cgi", cgiRoute)
                     .errorPage(404, "www/errors/404.html")
                     .timeoutMs(60000)
                     .build();

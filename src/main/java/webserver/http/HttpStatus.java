@@ -28,9 +28,13 @@ public class HttpStatus {
     private final int code;
     private final String reasonPhrase;
 
-    HttpStatus(int code, String reasonPhrase) {
+    public HttpStatus(int code, String reasonPhrase) {
         this.code = code;
         this.reasonPhrase = reasonPhrase;
+    }
+
+    public static HttpStatus fromCode(int code, String reasonPhrase) {
+        return new HttpStatus(code, reasonPhrase);
     }
 
     public int getCode() {

@@ -22,6 +22,8 @@ public final class ClientConnection {
     private HttpParser httpParser = new HttpParser();
     private HttpRequest currentRequest = null;
     private HttpResponse pendingResponse = null;
+
+    private volatile boolean cgiResponsePending = false;
     
 
     public ClientConnection(SocketChannel channel) {
@@ -59,6 +61,15 @@ public final class ClientConnection {
     public ByteBuffer getReadBuffer() {
         return readBuffer;
     }
+
+    public void CreateWriteBuffer() {
+        if(pendingResponse == null) {
+            this.writeBuffer = ByteBuffer.allocate(0);
+            return;
+        }
+        this.writeBuffer = ByteBuffer.allocate(pendingResponse.toBytes().length);
+    }
+
     public void CreateWriteBuffer(int capacity) {
         this.writeBuffer = ByteBuffer.allocate(capacity);
     }
@@ -89,6 +100,10 @@ public final class ClientConnection {
         return currentRequest != null;
     }
 
+    public HttpResponse getPendingResponse() {
+        return pendingResponse;
+    }
+
     public void setPendingResponse(HttpResponse response) {
         this.pendingResponse = response;
     }
@@ -116,6 +131,14 @@ public final class ClientConnection {
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
+    }
+
+    public boolean isCgiResponsePending() {
+        return cgiResponsePending;
+    }
+
+    public void setCgiResponsePending(boolean cgiResponsePending) {
+        this.cgiResponsePending = cgiResponsePending;
     }
 
 }
