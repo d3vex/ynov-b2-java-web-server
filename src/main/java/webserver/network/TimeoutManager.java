@@ -31,6 +31,8 @@ public class TimeoutManager {
                     ? connection.getTimeoutMs()
                     : defaultTimeoutMs;
 
+            if (connection.isCgiResponsePending()) continue;
+
             if ((now - connection.getLastActivityTime()) > effectiveTimeout) {
                 System.out.println("Timeout connection: " + connection.getRemoteAddress());
                 connection.close();
