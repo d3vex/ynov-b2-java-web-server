@@ -33,9 +33,7 @@ public class CgiEnvironmentBuilder {
         }
 
         String qs = request.getRawQueryString();
-        if (qs != null && !qs.isEmpty()) {
-            env.put("QUERY_STRING", qs);
-        }
+        env.put("QUERY_STRING", qs != null ? qs : "");
 
         String contentType = request.getHeaders().get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
