@@ -14,12 +14,18 @@ public class StaticFileHandler {
     private final MimeTypeResolver mimeResolver = new MimeTypeResolver();
     private final DirectoryListingHandler directoryListing = new DirectoryListingHandler();
     private final ErrorHandler errorHandler = new ErrorHandler();
+    private final CgiHandler cgiHandler = new CgiHandler();
 
     public HttpResponse handle(HttpRequest request, RouteConfig route, ServerConfig config) {
+        if (route != null && route.getCgiExtensions() != null && !route.getCgiExtensions().isEmpty()) {
+            HttpResponse cgiResponse = cgiHandler.handle(request, route, config);
+            if (cgiResponse != null) return cgiResponse;
+        }
+
         PathResolver.ResolvedPath resolved = pathResolver.resolve(request.getPath(), route, config);
 
         if (!resolved.secure()) {
-            return errorHandler.handleError(HttpStatus.FORBIDDEN, config, request.getPath());
+            return errorHandler.handleError(HttpStatus.FORBIDDEN, config, request.getPath(), request.getMethod());
         }
 
         File file = resolved.file();
@@ -36,17 +42,31 @@ public class StaticFileHandler {
             File defaultFileHandle = new File(file, defaultFile);
 
             if (fileService.exists(defaultFileHandle)) {
+                if (hasCgiExtension(defaultFileHandle.getName(), route)) {
+                    String scriptName = request.getPath().endsWith("/")
+                            ? request.getPath() + defaultFileHandle.getName()
+                            : request.getPath() + "/" + defaultFileHandle.getName();
+                    return cgiHandler.handleFile(request, route, config, defaultFileHandle, scriptName);
+                }
                 return serveFile(defaultFileHandle);
             }
 
-            return errorHandler.handleError(HttpStatus.FORBIDDEN, config, request.getPath());
+            return errorHandler.handleError(HttpStatus.FORBIDDEN, config, request.getPath(), request.getMethod());
         }
 
         if (!fileService.exists(file)) {
-            return errorHandler.handleError(HttpStatus.NOT_FOUND, config, request.getPath());
+            return errorHandler.handleError(HttpStatus.NOT_FOUND, config, request.getPath(), request.getMethod());
         }
 
         return serveFile(file);
+    }
+
+    private boolean hasCgiExtension(String filename, RouteConfig route) {
+        if (route == null || route.getCgiExtensions() == null) return false;
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0) return false;
+        String ext = filename.substring(dot);
+        return route.getCgiExtensions().contains(ext);
     }
 
     private HttpResponse serveFile(File file) {
@@ -60,7 +80,7 @@ public class StaticFileHandler {
                     .body(content)
                     .build();
         } catch (Exception e) {
-            return errorHandler.handleError(HttpStatus.INTERNAL_SERVER_ERROR);
+            return errorHandler.handleError(HttpStatus.INTERNAL_SERVER_ERROR, null, null, null);
         }
     }
 }
