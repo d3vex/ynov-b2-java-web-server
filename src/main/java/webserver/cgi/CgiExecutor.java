@@ -30,7 +30,16 @@ public class CgiExecutor {
                 }
             }
 
+            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+            Thread stdoutThread = drainStream(process.getInputStream(), stdout);
+            Thread stderrThread = drainStream(process.getErrorStream(), stderr);
+            stdoutThread.start();
+            stderrThread.start();
+
             boolean finished = process.waitFor(effectiveTimeout, TimeUnit.MILLISECONDS);
+            stdoutThread.join(2000);
+            stderrThread.join(2000);
 
             if (!finished) {
                 process.destroyForcibly();
@@ -38,23 +47,6 @@ public class CgiExecutor {
             }
 
             int exitCode = process.exitValue();
-
-            ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-            byte[] buffer = new byte[8192];
-            try (InputStream is = process.getInputStream()) {
-                int read;
-                while ((read = is.read(buffer)) != -1) {
-                    stdout.write(buffer, 0, read);
-                }
-            }
-
-            ByteArrayOutputStream stderr = new ByteArrayOutputStream();
-            try (InputStream es = process.getErrorStream()) {
-                int read;
-                while ((read = es.read(buffer)) != -1) {
-                    stderr.write(buffer, 0, read);
-                }
-            }
 
             if (exitCode != 0) {
                 String errMsg = stderr.size() > 0
@@ -70,6 +62,19 @@ public class CgiExecutor {
             return new CgiResult(500, "Internal Server Error",
                     ("CGI error: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    private Thread drainStream(InputStream input, ByteArrayOutputStream output) {
+        return new Thread(() -> {
+            byte[] buffer = new byte[8192];
+            try (InputStream is = input) {
+                int read;
+                while ((read = is.read(buffer)) != -1) {
+                    output.write(buffer, 0, read);
+                }
+            } catch (Exception ignored) {
+            }
+        }, "cgi-stream-drain");
     }
 
     private List<String> determineCommand(File scriptFile) {
