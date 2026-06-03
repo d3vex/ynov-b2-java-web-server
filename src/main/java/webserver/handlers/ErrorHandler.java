@@ -1,6 +1,9 @@
 package webserver.handlers;
 
 import webserver.config.ServerConfig;
+import webserver.errors.DefaultErrorPages;
+import webserver.errors.ErrorPageResolver;
+import webserver.errors.ServerExceptionMapper;
 import webserver.filesystem.FileService;
 import webserver.filesystem.MimeTypeResolver;
 import webserver.http.HttpHeaders;
@@ -9,24 +12,28 @@ import webserver.http.HttpResponse;
 import webserver.http.HttpStatus;
 
 import java.io.File;
-import java.util.Map;
 
 public class ErrorHandler {
 
+    private final DefaultErrorPages defaultPages = new DefaultErrorPages();
+    private final ErrorPageResolver pageResolver = new ErrorPageResolver();
+    private final ServerExceptionMapper exceptionMapper = new ServerExceptionMapper();
     private final FileService fileService = new FileService();
     private final MimeTypeResolver mimeResolver = new MimeTypeResolver();
 
     public HttpResponse handleError(HttpStatus status) {
-        return handleError(status, (Map<Integer, String>) null);
+        return serveErrorPage(status, null);
     }
 
     public HttpResponse handleError(HttpStatus status, ServerConfig config, String requestPath, HttpMethod method) {
-        String errorPath = config != null ? config.retrieveErrorPagePath(status.getCode(), requestPath, method) : null;
+        String errorPath = pageResolver.resolve(config, requestPath, method, status.getCode());
         return serveErrorPage(status, errorPath);
     }
 
-    public HttpResponse handleError(HttpStatus status, Map<Integer, String> errorPages) {
-        return serveErrorPage(status, errorPages != null ? errorPages.get(status.getCode()) : null);
+    public HttpResponse handleError(Exception e, ServerConfig config, String requestPath, HttpMethod method) {
+        HttpStatus status = exceptionMapper.toStatus(e);
+        String errorPath = pageResolver.resolve(config, requestPath, method, status.getCode());
+        return serveErrorPage(status, errorPath);
     }
 
     private HttpResponse serveErrorPage(HttpStatus status, String errorPath) {
@@ -45,30 +52,12 @@ public class ErrorHandler {
                 }
             }
         }
-        String body = buildErrorPage(status);
+        String body = defaultPages.render(status);
         return HttpResponse.builder()
                 .status(status)
                 .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=utf-8")
                 .header(HttpHeaders.CONNECTION, "close")
                 .body(body)
                 .build();
-    }
-
-    private String buildErrorPage(HttpStatus status) {
-        return buildErrorPage(status, status.getReasonPhrase());
-    }
-
-    private String buildErrorPage(HttpStatus status, String message) {
-        int code = status.getCode();
-        return """
-                <!DOCTYPE html>
-                <html>
-                <head><title>%d %s</title></head>
-                <body>
-                <h1>%d %s</h1>
-                <hr>
-                </body>
-                </html>
-                """.formatted(code, message, code, message);
     }
 }
