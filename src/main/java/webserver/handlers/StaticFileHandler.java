@@ -6,6 +6,7 @@ import webserver.filesystem.*;
 import webserver.http.*;
 
 import java.io.File;
+import java.util.List;
 
 public class StaticFileHandler {
 
@@ -17,7 +18,8 @@ public class StaticFileHandler {
     private final CgiHandler cgiHandler = new CgiHandler();
 
     public HttpResponse handle(HttpRequest request, RouteConfig route, ServerConfig config) {
-        if (route != null && route.getCgiExtensions() != null && !route.getCgiExtensions().isEmpty()) {
+        List<String> cgiExtensions = config.resolveCgiExtensions(request.getPath());
+        if (!cgiExtensions.isEmpty()) {
             HttpResponse cgiResponse = cgiHandler.handle(request, route, config);
             if (cgiResponse != null) return cgiResponse;
         }
@@ -31,8 +33,7 @@ public class StaticFileHandler {
         File file = resolved.file();
 
         if (fileService.isDirectory(file)) {
-            boolean listing = route != null && route.isDirectoryListing();
-            if (listing) {
+            if (config.resolveDirectoryListing(request.getPath())) {
                 return directoryListing.handle(file, request.getPath());
             }
 
@@ -42,7 +43,7 @@ public class StaticFileHandler {
             File defaultFileHandle = new File(file, defaultFile);
 
             if (fileService.exists(defaultFileHandle)) {
-                if (route != null && route.hasCgiExtension(defaultFileHandle.getName())) {
+                if (hasCgiExtension(defaultFileHandle.getName(), cgiExtensions)) {
                     String scriptName = request.getPath().endsWith("/")
                             ? request.getPath() + defaultFileHandle.getName()
                             : request.getPath() + "/" + defaultFileHandle.getName();
@@ -59,6 +60,17 @@ public class StaticFileHandler {
         }
 
         return serveFile(file);
+    }
+
+    private boolean hasCgiExtension(String filename, List<String> extensions) {
+        if (extensions == null || extensions.isEmpty()) return false;
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0) return false;
+        String ext = filename.substring(dot);
+        for (String configured : extensions) {
+            if (configured.equalsIgnoreCase(ext)) return true;
+        }
+        return false;
     }
 
     private HttpResponse serveFile(File file) {

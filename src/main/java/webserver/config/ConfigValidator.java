@@ -43,17 +43,23 @@ public class ConfigValidator {
                     }
                     break;
                 case "timeout":
-                    if (!isValidLong(dir.values.get(0))) {
+                    if (dir.values.isEmpty()) {
+                        errors.add("Server " + index + ": timeout value missing");
+                    } else if (!isValidLong(dir.values.get(0))) {
                         errors.add("Server " + index + ": invalid timeout '" + dir.values.get(0) + "'");
                     }
                     break;
                 case "client_body_limit":
-                    if (!isValidLong(dir.values.get(0))) {
+                    if (dir.values.isEmpty()) {
+                        errors.add("Server " + index + ": client_body_limit value missing");
+                    } else if (!isValidLong(dir.values.get(0))) {
                         errors.add("Server " + index + ": invalid client_body_limit '" + dir.values.get(0) + "'");
                     }
                     break;
                 case "directory_listing":
-                    if (!isValidBoolean(dir.values.get(0))) {
+                    if (dir.values.isEmpty()) {
+                        errors.add("Server " + index + ": directory_listing value missing");
+                    } else if (!isValidBoolean(dir.values.get(0))) {
                         errors.add("Server " + index + ": invalid directory_listing '" + dir.values.get(0) + "'");
                     }
                     break;
@@ -101,17 +107,23 @@ public class ConfigValidator {
                     }
                     break;
                 case "timeout":
-                    if (!isValidLong(dir.values.get(0))) {
+                    if (dir.values.isEmpty()) {
+                        errors.add("Server " + serverIndex + ", route " + routeIndex + ": timeout value missing");
+                    } else if (!isValidLong(dir.values.get(0))) {
                         errors.add("Server " + serverIndex + ", route " + routeIndex + ": invalid timeout '" + dir.values.get(0) + "'");
                     }
                     break;
                 case "client_body_limit":
-                    if (!isValidLong(dir.values.get(0))) {
+                    if (dir.values.isEmpty()) {
+                        errors.add("Server " + serverIndex + ", route " + routeIndex + ": client_body_limit value missing");
+                    } else if (!isValidLong(dir.values.get(0))) {
                         errors.add("Server " + serverIndex + ", route " + routeIndex + ": invalid client_body_limit '" + dir.values.get(0) + "'");
                     }
                     break;
                 case "directory_listing":
-                    if (!isValidBoolean(dir.values.get(0))) {
+                    if (dir.values.isEmpty()) {
+                        errors.add("Server " + serverIndex + ", route " + routeIndex + ": directory_listing value missing");
+                    } else if (!isValidBoolean(dir.values.get(0))) {
                         errors.add("Server " + serverIndex + ", route " + routeIndex + ": invalid directory_listing '" + dir.values.get(0) + "'");
                     }
                     break;

@@ -14,13 +14,14 @@ public class RouteConfig {
     private final String root;
     private final String defaultFile;
     private final List<String> cgiExtensions;
-    private final boolean directoryListing;
+    private final Boolean directoryListing;
     private final Long timeoutMs;
+    private final Long clientBodyLimit;
     private final Map<Integer, String> errorPages;
 
     public RouteConfig(String path, List<HttpMethod> allowedMethods, String redirect,
                        String root, String defaultFile, List<String> cgiExtensions,
-                       boolean directoryListing, Long timeoutMs,
+                       Boolean directoryListing, Long timeoutMs, Long clientBodyLimit,
                        Map<Integer, String> errorPages) {
         this.path = path;
         this.allowedMethods = allowedMethods;
@@ -30,6 +31,7 @@ public class RouteConfig {
         this.cgiExtensions = cgiExtensions;
         this.directoryListing = directoryListing;
         this.timeoutMs = timeoutMs;
+        this.clientBodyLimit = clientBodyLimit;
         this.errorPages = errorPages;
     }
 
@@ -68,12 +70,16 @@ public class RouteConfig {
         return false;
     }
 
-    public boolean isDirectoryListing() {
+    public Boolean getDirectoryListing() {
         return directoryListing;
     }
 
     public Long getTimeoutMs() {
         return timeoutMs;
+    }
+
+    public Long getClientBodyLimit() {
+        return clientBodyLimit;
     }
 
     public Map<Integer, String> getErrorPages() {
@@ -82,13 +88,14 @@ public class RouteConfig {
 
     public static class Builder {
         private String path;
-        private List<HttpMethod> allowedMethods = List.of(HttpMethod.GET, HttpMethod.POST, HttpMethod.DELETE);
+        private List<HttpMethod> allowedMethods;
         private String redirect;
         private String root;
         private String defaultFile = ConfigDefaults.DEFAULT_FILE;
-        private List<String> cgiExtensions = List.of();
-        private boolean directoryListing = ConfigDefaults.DIRECTORY_LISTING;
+        private List<String> cgiExtensions;
+        private Boolean directoryListing;
         private Long timeoutMs;
+        private Long clientBodyLimit;
         private final Map<Integer, String> errorPages = new HashMap<>();
 
         public Builder path(String path) {
@@ -131,6 +138,11 @@ public class RouteConfig {
             return this;
         }
 
+        public Builder clientBodyLimit(long clientBodyLimit) {
+            this.clientBodyLimit = clientBodyLimit;
+            return this;
+        }
+
         public Builder errorPage(int statusCode, String path) {
             this.errorPages.put(statusCode, path);
             return this;
@@ -138,7 +150,7 @@ public class RouteConfig {
 
         public RouteConfig build() {
             return new RouteConfig(path, allowedMethods, redirect, root, defaultFile,
-                    cgiExtensions, directoryListing, timeoutMs, errorPages);
+                    cgiExtensions, directoryListing, timeoutMs, clientBodyLimit, errorPages);
         }
     }
 }

@@ -18,6 +18,7 @@ public class HttpParser {
     private byte[] body;
     private int contentLength = -1;
 
+    private final ChunkedDecoder chunkedDecoder = new ChunkedDecoder();
     private String errorReason;
 
     public RequestParserState getState() {
@@ -59,6 +60,7 @@ public class HttpParser {
         headers = null;
         body = null;
         contentLength = -1;
+        chunkedDecoder.reset();
         errorReason = null;
     }
 
@@ -107,8 +109,14 @@ public class HttpParser {
         if (idx < 0) {
             int lineEnd = buffer.indexOf("\r\n");
             if (lineEnd >= 0) {
-                headerLines.add(buffer.substring(0, lineEnd));
+                String line = buffer.substring(0, lineEnd);
                 buffer.delete(0, lineEnd + 2);
+                if (line.isEmpty()) {
+                    finishHeaderParsing();
+                } else {
+                    headerLines.add(line);
+                    run();
+                }
             }
             return;
         }
@@ -125,6 +133,10 @@ public class HttpParser {
         }
         buffer.delete(0, idx + 4);
 
+        finishHeaderParsing();
+    }
+
+    private void finishHeaderParsing() {
         headers = HttpHeaders.parse(headerLines);
 
         String cl = headers.get(HttpHeaders.CONTENT_LENGTH);
@@ -166,48 +178,12 @@ public class HttpParser {
             return;
         }
 
-        // chunked transfer encoding
-        while (true) {
-            int crlf = buffer.indexOf("\r\n");
-            if (crlf < 0) return;
-
-            String sizeLine = buffer.substring(0, crlf).trim();
-            int semicolon = sizeLine.indexOf(';');
-            if (semicolon >= 0) sizeLine = sizeLine.substring(0, semicolon);
-
-            int chunkSize;
-            try {
-                chunkSize = Integer.parseInt(sizeLine, 16);
-            } catch (NumberFormatException e) {
-                error("Invalid chunk size: " + sizeLine);
-                return;
-            }
-
-            buffer.delete(0, crlf + 2);
-
-            if (chunkSize == 0) {
-                if (buffer.length() >= 2 && buffer.substring(0, 2).equals("\r\n")) {
-                    buffer.delete(0, 2);
-                }
-                if (body == null) body = new byte[0];
+        switch (chunkedDecoder.decode(buffer)) {
+            case COMPLETE -> {
+                body = chunkedDecoder.getBody();
                 state = RequestParserState.COMPLETE;
-                return;
             }
-
-            if (buffer.length() < chunkSize + 2) return;
-
-            String chunkData = buffer.substring(0, chunkSize);
-            buffer.delete(0, chunkSize + 2);
-
-            byte[] chunkBytes = chunkData.getBytes(StandardCharsets.ISO_8859_1);
-            if (body == null) {
-                body = chunkBytes;
-            } else {
-                byte[] combined = new byte[body.length + chunkBytes.length];
-                System.arraycopy(body, 0, combined, 0, body.length);
-                System.arraycopy(chunkBytes, 0, combined, body.length, chunkBytes.length);
-                body = combined;
-            }
+            case ERROR -> error(chunkedDecoder.getErrorReason());
         }
     }
 

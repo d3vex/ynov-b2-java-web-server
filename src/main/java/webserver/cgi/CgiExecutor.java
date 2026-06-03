@@ -53,6 +53,8 @@ public class CgiExecutor {
                         ? stderr.toString(StandardCharsets.UTF_8)
                         : "CGI script exited with code " + exitCode;
                 System.err.println("CGI error (" + scriptFile.getName() + "): " + errMsg);
+                return new CgiResult(500, "CGI Error",
+                        ("CGI script error: " + errMsg).getBytes(StandardCharsets.UTF_8));
             }
 
             return new CgiResult(200, "OK", stdout.toByteArray());

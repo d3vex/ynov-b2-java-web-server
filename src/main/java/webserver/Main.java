@@ -42,56 +42,6 @@ public class Main {
             }
         }
 
-        return buildHardcodedConfig();
-    }
-
-    private static List<ServerConfig> buildHardcodedConfig() {
-        RouteConfig apiRoute = new RouteConfig.Builder()
-                .path("/api")
-                .root("www")
-                .defaultFile("index.html")
-                .errorPage(404, "www/errors/custom_404.html")
-                .errorPage(403, "www/errors/401.html")
-                .build();
-
-        RouteConfig filesRoute = new RouteConfig.Builder()
-                .path("/files")
-                .root("www")
-                .directoryListing(true)
-                .build();
-
-        RouteConfig docsRoute = new RouteConfig.Builder()
-                .path("/docs")
-                .redirect("https://aaa.com/docs")
-                .build();
-
-        RouteConfig cgiRoute = new RouteConfig.Builder()
-                .path("/cgi")
-                .root("www/cgi")
-                .defaultFile("index.py")
-                .cgiExtensions(List.of(".py", ".sh"))
-                .build();
-
-        ServerConfig apiConfig = new ServerConfig.Builder()
-                .host("0.0.0.0")
-                .port(8888)
-                .defaultServerRoot("www")
-                .route("/api", apiRoute)
-                .route("/files", filesRoute)
-                .route("/docs", docsRoute)
-                .route("/cgi", cgiRoute)
-                .errorPage(404, "www/errors/404.html")
-                .timeoutMs(60000)
-                .build();
-
-        ServerConfig adminConfig = new ServerConfig.Builder()
-                .host("0.0.0.0")
-                .port(8889)
-                .defaultServerRoot("www/admin")
-                .errorPage(403, "www/errors/401.html")
-                .errorPage(404, "www/errors/404.html")
-                .build();
-
-        return List.of(apiConfig, adminConfig);
+        return List.of();
     }
 }

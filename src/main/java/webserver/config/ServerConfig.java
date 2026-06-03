@@ -16,10 +16,14 @@ public class ServerConfig {
     private final long clientBodyLimit;
     private final String defaultServerRoot;
     private final Long timeoutMs;
+    private final List<HttpMethod> allowedMethods;
+    private final List<String> cgiExtensions;
+    private final Boolean directoryListing;
 
     public ServerConfig(String host, List<Integer> ports, Map<String, RouteConfig> routes,
                         Map<Integer, String> errorPages, long clientBodyLimit,
-                        String defaultServerRoot, Long timeoutMs) {
+                        String defaultServerRoot, Long timeoutMs, List<HttpMethod> allowedMethods,
+                        List<String> cgiExtensions, Boolean directoryListing) {
         this.host = host;
         this.ports = ports;
         this.routes = routes;
@@ -27,6 +31,9 @@ public class ServerConfig {
         this.clientBodyLimit = clientBodyLimit;
         this.defaultServerRoot = defaultServerRoot;
         this.timeoutMs = timeoutMs;
+        this.allowedMethods = allowedMethods;
+        this.cgiExtensions = cgiExtensions;
+        this.directoryListing = directoryListing;
     }
 
     public String getHost() {
@@ -47,6 +54,51 @@ public class ServerConfig {
 
     public long getClientBodyLimit() {
         return clientBodyLimit;
+    }
+
+    public List<HttpMethod> getAllowedMethods() {
+        return allowedMethods;
+    }
+
+    public List<String> getCgiExtensions() {
+        return cgiExtensions;
+    }
+
+    public Boolean getDirectoryListing() {
+        return directoryListing;
+    }
+
+    public List<String> resolveCgiExtensions(String requestPath) {
+        RouteConfig route = findRoute(requestPath);
+        if (route != null && route.getCgiExtensions() != null) {
+            return route.getCgiExtensions();
+        }
+        if (cgiExtensions != null) {
+            return cgiExtensions;
+        }
+        return List.of();
+    }
+
+    public boolean resolveDirectoryListing(String requestPath) {
+        RouteConfig route = findRoute(requestPath);
+        if (route != null && route.getDirectoryListing() != null) {
+            return route.getDirectoryListing();
+        }
+        if (directoryListing != null) {
+            return directoryListing;
+        }
+        return ConfigDefaults.DIRECTORY_LISTING;
+    }
+
+    public List<HttpMethod> resolveAllowedMethods(String requestPath) {
+        RouteConfig route = findRoute(requestPath);
+        if (route != null && route.getAllowedMethods() != null) {
+            return route.getAllowedMethods();
+        }
+        if (allowedMethods != null) {
+            return allowedMethods;
+        }
+        return ConfigDefaults.DEFAULT_ALLOWED_METHODS;
     }
 
     public String getDefaultServerRoot() {
@@ -81,6 +133,14 @@ public class ServerConfig {
         return errorPages.get(statusCode);
     }
 
+    public long resolveClientBodyLimit(String requestPath) {
+        RouteConfig route = findRoute(requestPath);
+        if (route != null && route.getClientBodyLimit() != null) {
+            return route.getClientBodyLimit();
+        }
+        return clientBodyLimit;
+    }
+
     public RouteConfig findRoute(String requestPath) {
         RouteConfig bestMatch = null;
         int bestLength = -1;
@@ -104,6 +164,9 @@ public class ServerConfig {
         private long clientBodyLimit = ConfigDefaults.CLIENT_BODY_LIMIT;
         private String defaultServerRoot = ConfigDefaults.DEFAULT_SERVER_ROOT;
         private Long timeoutMs;
+        private List<HttpMethod> allowedMethods;
+        private List<String> cgiExtensions;
+        private Boolean directoryListing;
 
         public Builder host(String host) {
             this.host = host;
@@ -145,12 +208,27 @@ public class ServerConfig {
             return this;
         }
 
+        public Builder allowedMethods(List<HttpMethod> allowedMethods) {
+            this.allowedMethods = allowedMethods;
+            return this;
+        }
+
+        public Builder cgiExtensions(List<String> cgiExtensions) {
+            this.cgiExtensions = cgiExtensions;
+            return this;
+        }
+
+        public Builder directoryListing(boolean directoryListing) {
+            this.directoryListing = directoryListing;
+            return this;
+        }
+
         public ServerConfig build() {
             if (ports.isEmpty()) {
                 ports.add(8080);
             }
             return new ServerConfig(host, ports, routes, errorPages, clientBodyLimit,
-                    defaultServerRoot, timeoutMs);
+                    defaultServerRoot, timeoutMs, allowedMethods, cgiExtensions, directoryListing);
         }
     }
 }

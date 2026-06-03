@@ -22,8 +22,14 @@ public class HandlerHttpRequest {
             return;
         }
 
-        RouteConfig route = config.findRoute(request.getPath());
-        if (route != null && route.getCgiExtensions() != null && !route.getCgiExtensions().isEmpty()) {
+        long bodyLimit = config.resolveClientBodyLimit(request.getPath());
+        byte[] body = request.getBody();
+        if (body != null && body.length > bodyLimit) {
+            sendError(connection, HttpStatus.PAYLOAD_TOO_LARGE, request);
+            return;
+        }
+
+        if (!config.resolveCgiExtensions(request.getPath()).isEmpty()) {
             CgiAsyncExecutor.getInstance().execute(connection, request, config);
             return;
         }

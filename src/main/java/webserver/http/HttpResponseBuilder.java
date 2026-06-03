@@ -7,7 +7,7 @@ public class HttpResponseBuilder {
     private String httpVersion = "HTTP/1.1";
     private HttpStatus statusCode = HttpStatus.OK;
     private HttpHeaders headers = new HttpHeaders();
-    private byte[] body;
+    private byte[] body = new byte[0];
 
     public HttpResponseBuilder httpVersion(String httpVersion) {
         this.httpVersion = httpVersion;
