@@ -4,16 +4,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import webserver.cgi.CgiAsyncExecutor;
 import webserver.config.ConfigLoader;
 import webserver.config.RouteConfig;
 import webserver.config.ServerConfig;
 import webserver.handlers.ErrorHandler;
 import webserver.handlers.RequestDispatcher;
 import webserver.http.*;
+import webserver.network.ClientConnection;
 import webserver.session.CookieService;
 import webserver.session.SessionManager;
 
 import java.io.File;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -308,6 +311,60 @@ class IntegrationTest {
             HttpResponse response = new RequestDispatcher().dispatch(request, config);
 
             assertEquals(404, response.getStatusCode().getCode());
+        }
+
+        @Test
+        @DisplayName("10s CGI does not block concurrent request handling")
+        void slowCgiDoesNotBlock(@TempDir Path tempDir) throws Exception {
+            Path cgiDir = tempDir.resolve("cgi");
+            Files.createDirectories(cgiDir);
+            Path slowScript = cgiDir.resolve("slow.sh");
+            Files.writeString(slowScript, "#!/bin/bash\nsleep 10\necho \"Content-Type: text/plain\"\necho \"\"\necho \"done\"");
+            slowScript.toFile().setExecutable(true);
+
+            Path www = tempDir.resolve("www");
+            Files.createDirectories(www);
+            Files.writeString(www.resolve("fast.txt"), "fast-response-body");
+
+            ServerConfig config = new ServerConfig.Builder()
+                    .port(8080)
+                    .defaultServerRoot(www.toString())
+                    .route("/cgi", new RouteConfig.Builder()
+                            .path("/cgi")
+                            .root(cgiDir.toString())
+                            .cgiExtensions(List.of(".sh"))
+                            .build())
+                    .build();
+
+            try (var serverSocket = java.nio.channels.ServerSocketChannel.open()) {
+                serverSocket.bind(new java.net.InetSocketAddress("127.0.0.1", 0));
+                SocketChannel peer = SocketChannel.open();
+                peer.connect(serverSocket.socket().getLocalSocketAddress());
+                SocketChannel accepted = serverSocket.accept();
+
+                ClientConnection cgiConn = new ClientConnection(accepted);
+                cgiConn.setServerConfig(config);
+
+                String rawRequest = "GET /cgi/slow.sh HTTP/1.1\r\nHost: localhost\r\n\r\n";
+                cgiConn.getReadBuffer().put(rawRequest.getBytes(StandardCharsets.ISO_8859_1));
+                cgiConn.getReadBuffer().flip();
+                assertTrue(cgiConn.parse());
+                assertNotNull(cgiConn.getCurrentRequest());
+
+                long start = System.currentTimeMillis();
+                CgiAsyncExecutor.getInstance().execute(cgiConn,
+                        cgiConn.getCurrentRequest(), config);
+                long elapsed = System.currentTimeMillis() - start;
+                assertTrue(elapsed < 1000, "CGI dispatch blocked for " + elapsed + "ms");
+
+                HttpRequest fastReq = new HttpRequest(HttpMethod.GET, "/fast.txt", "HTTP/1.1", new HttpHeaders());
+                HttpResponse fastRes = new RequestDispatcher().dispatch(fastReq, config);
+                assertEquals(200, fastRes.getStatusCode().getCode());
+                assertEquals("fast-response-body", fastRes.getBodyAsString());
+
+                peer.close();
+                accepted.close();
+            }
         }
     }
 
