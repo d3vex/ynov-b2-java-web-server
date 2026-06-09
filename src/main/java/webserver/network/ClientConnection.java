@@ -8,6 +8,7 @@ import webserver.http.HttpParser;
 import webserver.http.HttpRequest;
 import webserver.http.HttpResponse;
 import webserver.http.HttpResponseBuilder;
+import webserver.session.Session;
 
 public final class ClientConnection {
     
@@ -24,7 +25,8 @@ public final class ClientConnection {
     private HttpResponse pendingResponse = null;
 
     private volatile boolean cgiResponsePending = false;
-    
+
+    private Session session = null;
 
     public ClientConnection(SocketChannel channel) {
         this.channel = channel;
@@ -141,4 +143,11 @@ public final class ClientConnection {
         this.cgiResponsePending = cgiResponsePending;
     }
 
+    public Session getSession() {
+        return session;
+    }
+
+    public void setSession(Session session) {
+        this.session = session;
+    }
 }
