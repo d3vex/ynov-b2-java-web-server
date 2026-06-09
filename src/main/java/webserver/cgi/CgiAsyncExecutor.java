@@ -2,6 +2,7 @@ package webserver.cgi;
 
 import webserver.config.ServerConfig;
 import webserver.handlers.ErrorHandler;
+import webserver.handlers.HandlerHttpRequest;
 import webserver.handlers.RequestDispatcher;
 import webserver.http.HttpRequest;
 import webserver.http.HttpResponse;
@@ -51,6 +52,7 @@ public class CgiAsyncExecutor {
     }
 
     private void complete(ClientConnection connection, HttpResponse response) {
+        HandlerHttpRequest.attachSessionCookie(connection, response);
         connection.setPendingResponse(response);
         connection.setCgiResponsePending(true);
         SelectorManager.getInstance().addPendingCgi(connection);
